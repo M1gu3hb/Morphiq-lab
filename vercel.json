@@ -8,7 +8,7 @@
   "rewrites": [
     {
       "source": "/3d-may-effect/c/:id",
-      "destination": "/3d-may-effect/c.html"
+      "destination": "/3d-may-effect/c"
     }
   ],
   "headers": [
