@@ -1,7 +1,7 @@
 /* Morphiq Lab — base compartida por la librería y todos los experimentos. */
 :root{
   --bg:#03050b; --bg-2:#070b16; --panel:#0a0f1d; --panel-2:#0e1528; --line:rgba(140,170,255,.14); --line-2:rgba(140,170,255,.26);
-  --blue:#1e5bff; --blue-2:#3d7bff; --cyan:#38e1ff; --text:#e9eefb; --muted:#8a97b8; --dim:#5d6a8c; --steel:#b4c0d8; --danger:#ff5d6c; --ok:#3ddc97;
+  --blue:#1e5bff; --blue-2:#3d7bff; --cyan:#38e1ff; --text:#e9eefb; --muted:#8a97b8; --dim:#7483a8; --steel:#b4c0d8; --danger:#ff5d6c; --ok:#3ddc97;
   --display:"Michroma","Geist",system-ui,sans-serif; --ui:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
   --r:14px; --ease:cubic-bezier(.2,.8,.2,1);
 }

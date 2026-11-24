@@ -2,12 +2,12 @@
 // DELETE (con clave)                → vuelve a la portada original
 // Cada vez que se fija una portada se guarda con la hora en el nombre; la vigente es la más reciente.
 import { del, list } from '@vercel/blob';
-import { guard, json, needStore } from '../_lib/lab.js';
+import { guard, hasStore, json, needStore } from '../_lib/lab.js';
 
 const PREFIX = '3d-may-effect/default/';
 
 export default async function handler(req, res) {
-  if (!needStore(res)) return;
+  if (!hasStore()) return req.method === 'GET' ? json(res, 200, { url: null }) : needStore(res); // sin almacén la portada es la original
   try {
     const { blobs } = await list({ prefix: PREFIX, limit: 100 });
     blobs.sort((a, b) => b.pathname.localeCompare(a.pathname));

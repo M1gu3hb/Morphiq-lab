@@ -1,4 +1,4 @@
-// GET /api/3d-may-effect/cards (con clave) → enlaces publicados. También sirve para comprobar la clave.
+// GET /api/3d-may-effect/cards (con sesión) → enlaces publicados.
 import { list } from '@vercel/blob';
 import { guard, hasStore, json } from '../_lib/lab.js';
 

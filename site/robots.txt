@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /3d-may-effect/lab
+Disallow: /3d-may-effect/c/

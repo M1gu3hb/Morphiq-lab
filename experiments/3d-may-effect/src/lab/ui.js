@@ -62,7 +62,15 @@ export function modal(title, build) {
   return new Promise((res) => {
     const root = document.getElementById('modal'), prev = document.activeElement;
     const close = (v) => { root.hidden = true; root.textContent = ''; document.removeEventListener('keydown', onKey); if (prev && prev.focus) prev.focus(); res(v); };
-    const onKey = (e) => { if (e.key === 'Escape') close(null); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') return close(null);
+      if (e.key !== 'Tab') return; // el foco no sale del diálogo mientras está abierto
+      const f = [...root.querySelectorAll('button,input,select,textarea,a[href]')].filter((n) => !n.disabled);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     const sheet = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
       h('header', { class: 'sheet-h' }, h('h2', { text: title }), h('button', { class: 'ic', type: 'button', 'aria-label': 'Cerrar', html: icon('x'), onclick: () => close(null) })),
       h('div', { class: 'sheet-b' }, build(close)));

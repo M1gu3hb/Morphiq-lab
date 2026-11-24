@@ -59,15 +59,23 @@ Unidades: `1` = ancho de la carta; `depth < 0` es hacia adentro y `depth > 0` se
 
 ### Enlaces y portada
 
-Los enlaces compartidos y la carta fijada como portada se guardan en **Vercel Blob**. Publicar, cambiar la portada o borrar exige la clave del laboratorio; ver una carta es público.
+Los enlaces compartidos y la carta fijada como portada se guardan en **Vercel Blob**. Ver una carta es público; publicar, cambiar la portada o borrar exige entrar con la clave del laboratorio. Al entrar, el servidor entrega una cookie de sesión firmada (HttpOnly, 30 días): la clave no se guarda en el navegador.
 
-Variables de entorno en Vercel:
+Variables de entorno en Vercel (Production):
 
-- `BLOB_READ_WRITE_TOKEN` — la crea Vercel al conectar el almacén Blob al proyecto.
-- `LAB_KEY` — clave del laboratorio (sólo en variables de entorno, nunca en Git). Para cambiarla, edítala en Vercel y vuelve a desplegar.
+- `LAB_KEY` — clave del laboratorio, larga y aleatoria. Sólo en variables de entorno, nunca en Git. Cambiarla cierra todas las sesiones.
+- `BLOB_READ_WRITE_TOKEN` — la crea Vercel al conectar un almacén Blob (Storage → Create → Blob → Connect to project).
 
-Sin esas variables el sitio funciona igual: sólo se desactivan los enlaces y el cambio de portada (la exportación a HTML no depende de ellas).
+Sin esas variables el sitio funciona igual: sólo se desactivan los enlaces y el cambio de portada. La exportación a HTML no depende de ellas.
+
+### Seguridad
+
+- Cabeceras en `vercel.json`: CSP, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`. `style-src` permite estilos en línea porque el visor inyecta su hoja de estilos (la misma que viaja dentro del HTML exportado).
+- Las funciones validan sesión y origen en todo lo que cambia estado; las subidas sólo aceptan JSON, hasta 60 MB, en rutas exactas.
+- El freno de intentos de clave vive en memoria de cada instancia: para un límite duro, añade una regla de rate limiting en el Firewall de Vercel sobre `/api/3d-may-effect/session`.
 
 ## Despliegue
 
-Proyecto de Vercel vinculado a `M1gu3hb/Morphiq-lab`: cada push a `main` se publica solo. Framework **Other**, `npm run build`, salida `dist` (ver `vercel.json`).
+Proyecto de Vercel `morphiqlab` vinculado a `M1gu3hb/Morphiq-lab`: cada push a `main` se publica solo. Framework **Other**, `npm run build`, salida `dist` (ver `vercel.json`).
+
+**Volver atrás:** en Vercel → Deployments, elige el despliegue anterior y usa *Instant Rollback*; o revierte el commit en `main`.

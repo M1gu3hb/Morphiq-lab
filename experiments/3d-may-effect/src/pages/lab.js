@@ -242,28 +242,38 @@ async function withBusy(btn, label, fn) {
 function askKey() {
   return modal('Clave del laboratorio', (close) => {
     const i = h('input', { type: 'password', autocomplete: 'current-password', placeholder: 'Clave', 'aria-label': 'Clave del laboratorio' });
-    const msg = h('p', { class: 'hint', text: 'Sólo quien tiene la clave puede publicar enlaces o cambiar la portada. Se guarda en este dispositivo.' });
+    const msg = h('p', { class: 'hint', text: 'Sólo con la clave se pueden publicar enlaces o cambiar la portada. La sesión queda abierta 30 días en este dispositivo; la clave no se guarda.' });
     const go = h('button', { class: 'btn small primary', type: 'button', text: 'Entrar' });
     const run = async () => {
       const key = i.value.trim(); if (!key) return;
       go.disabled = true; go.textContent = 'Comprobando…';
-      try { await api.checkKey(key); api.setKey(key); close(key); }
-      catch (e) { msg.textContent = e.status === 401 ? 'Clave incorrecta.' : e.status === 429 ? 'Demasiados intentos. Espera un minuto.' : (e.message || 'No se pudo comprobar.'); msg.classList.add('err'); go.disabled = false; go.textContent = 'Entrar'; }
+      try { const st = await api.login(key); S.auth = true; S.storage = st.storage; close(true); }
+      catch (e) { msg.textContent = e.status === 401 ? 'Clave incorrecta.' : (e.message || 'No se pudo comprobar.'); msg.classList.add('err'); go.disabled = false; go.textContent = 'Entrar'; }
     };
     go.addEventListener('click', run); i.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
     return [i, msg, h('div', { class: 'row end' }, go)];
   });
 }
-const needKey = async () => api.getKey() || (await askKey());
+async function needSession(storage = false) {
+  if (!S.auth) {
+    const st = await api.session().catch(() => null);
+    if (!st) { toast('No se pudo contactar al servidor', 'err'); return false; }
+    if (!st.configured) { toast('Falta configurar la clave del laboratorio (LAB_KEY) en Vercel', 'err'); return false; }
+    S.storage = st.storage; S.auth = st.ok;
+    if (!S.auth && !(await askKey())) return false;
+  }
+  if (storage && S.storage === false) { toast('Falta conectar el almacenamiento (Vercel Blob) al proyecto en Vercel', 'err'); return false; }
+  return true;
+}
 async function publish(kind, btn) {
-  const key = await needKey(); if (!key) return null;
+  if (!(await needSession(true))) return null;
   return withBusy(btn, 'Preparando…', async () => {
     const cfg = await card.portable();
-    try { return await api.publish(kind, cfg, key, (p) => { btn.textContent = `Subiendo ${Math.round(p)}%`; }); }
+    try { return await api.publish(kind, cfg, (p) => { btn.textContent = `Subiendo ${Math.round(p)}%`; }); }
     catch (e) {
-      const st = await api.checkKey(key).then(() => 200, (x) => x.status); // ¿falló por la clave o por la red/almacenamiento?
-      if (st === 401) { api.setKey(''); throw new Error('La clave ya no es válida. Vuelve a intentarlo.'); }
-      throw new Error('No se pudo subir la carta. ' + (st === 503 ? 'Falta conectar el almacenamiento en Vercel.' : 'Revisa tu conexión e inténtalo de nuevo.'));
+      const st = await api.session().catch(() => null); // ¿falló por la sesión o por la red?
+      if (st && !st.ok) { S.auth = false; throw new Error('La sesión caducó. Vuelve a intentarlo.'); }
+      throw new Error('No se pudo subir la carta. Revisa tu conexión e inténtalo de nuevo.');
     }
   });
 }
@@ -284,7 +294,7 @@ function paneOut(pane) {
   const bDef = h('button', { class: 'btn wide', type: 'button', html: icon('star') + '<span>Usar como portada del experimento</span>' });
   bDef.addEventListener('click', async () => { const r = await publish('default', bDef); if (r) toast('Listo: esta carta ya es la portada'); });
   const bReset = h('button', { class: 'btn small ghost', type: 'button', text: 'Volver a la portada original' });
-  bReset.addEventListener('click', async () => { const key = await needKey(); if (!key) return; await withBusy(bReset, 'Restaurando…', async () => { await api.resetDefault(key); toast('Portada original restaurada'); }); });
+  bReset.addEventListener('click', async () => { if (!(await needSession(true))) return; await withBusy(bReset, 'Restaurando…', async () => { await api.resetDefault(); toast('Portada original restaurada'); }); });
   const bJson = h('button', { class: 'btn small', type: 'button', text: 'Guardar proyecto (.json)' });
   bJson.addEventListener('click', () => withBusy(bJson, 'Generando…', async () => { const p = await card.portable(); p.layers.forEach((l) => delete l.baked); download(slugify(S.cfg.name) + '.morphcard.json', JSON.stringify(p), 'application/json'); }));
   const bOpen = h('button', { class: 'btn small', type: 'button', text: 'Abrir proyecto' });
@@ -306,26 +316,31 @@ function paneOut(pane) {
   const links = h('div', { class: 'links' });
   const bLinks = h('button', { class: 'btn small ghost', type: 'button', text: 'Ver mis enlaces publicados' });
   bLinks.addEventListener('click', async () => {
-    const key = await needKey(); if (!key) return;
+    if (!(await needSession(true))) return;
     await withBusy(bLinks, 'Cargando…', async () => {
-      const { cards } = await api.listCards(key); links.textContent = '';
+      const { cards } = await api.listCards(); links.textContent = '';
       if (!cards.length) links.append(h('p', { class: 'muted small', text: 'Aún no has publicado enlaces.' }));
       cards.forEach((c) => { const url = `${location.origin}/3d-may-effect/c/${c.id}`; links.append(h('div', { class: 'lrow' },
         h('a', { href: url, target: '_blank', rel: 'noopener', class: 'mono small', text: '/c/' + c.id }), h('span', { class: 'muted small', text: `${(c.size / 1e6).toFixed(1)} MB · ${new Date(c.uploadedAt).toLocaleDateString('es-MX')}` }),
         h('button', { class: 'ic', type: 'button', 'aria-label': 'Copiar enlace', html: icon('copy', 16), onclick: () => copy(url) }),
-        h('button', { class: 'ic danger', type: 'button', 'aria-label': 'Eliminar enlace', html: icon('trash', 16), onclick: async () => { if (await confirmBox('Eliminar enlace', 'El enlace dejará de funcionar para todos.')) { try { await api.deleteCard(c.id, key); bLinks.click(); } catch (e) { toast(e.message, 'err'); } } } }))); });
+        h('button', { class: 'ic danger', type: 'button', 'aria-label': 'Eliminar enlace', html: icon('trash', 16), onclick: async () => { if (await confirmBox('Eliminar enlace', 'El enlace dejará de funcionar para todos.')) { try { await api.deleteCard(c.id); bLinks.click(); } catch (e) { toast(e.message, 'err'); } } } }))); });
     });
   });
 
+  const auth = h('div', { class: 'row' }, h('span', { class: 'muted small', text: 'Comprobando…' }));
+  api.session().then((st) => {
+    S.auth = st.ok; S.storage = st.storage; auth.textContent = '';
+    auth.append(h('span', { class: 'muted small', text: !st.configured ? 'Falta configurar la clave (LAB_KEY) en Vercel.' : st.ok ? 'Sesión abierta en este dispositivo.' : 'Sin sesión: se pedirá la clave al publicar.' }));
+    if (st.configured) auth.append(h('button', { class: 'btn small ghost', type: 'button', text: st.ok ? 'Cerrar sesión' : 'Entrar', onclick: async () => { if (st.ok) { await api.logout().catch(() => {}); S.auth = false; toast('Sesión cerrada'); } else await askKey(); renderPane(); } }));
+    if (st.configured && !st.storage) auth.append(h('p', { class: 'hint', text: 'Falta conectar el almacenamiento (Vercel Blob): sin él no se pueden crear enlaces ni cambiar la portada. Exportar HTML funciona siempre.' }));
+  }).catch(() => { auth.textContent = ''; auth.append(h('span', { class: 'muted small', text: 'Sin conexión con el servidor. Exportar HTML funciona igual.' })); });
   const tpl = h('div', { class: 'tpl' }, Object.entries(TEMPLATES).map(([k, t]) => h('button', { class: 'add', type: 'button', onclick: async () => { await save(); await openCard(t.make(), null); dirty(); S.tab = 'layers'; render(); toast('Carta nueva: ' + t.label); } }, h('span', { class: 'add-t', text: t.label }), h('span', { class: 'add-d', text: t.desc }))));
   pane.append(
     h('section', { class: 'sec' }, h('div', { class: 'sec-h' }, h('h3', { text: 'Exportar' })), h('p', { class: 'note', text: 'Un solo archivo con todo dentro: se abre en cualquier teléfono o computadora, sin internet.' }), bHtml),
     h('section', { class: 'sec' }, h('div', { class: 'sec-h' }, h('h3', { text: 'Compartir' })), bLink, linkBox, bDef, h('div', { class: 'row' }, bReset, bLinks), links),
     h('section', { class: 'sec' }, h('div', { class: 'sec-h' }, h('h3', { text: 'Carta nueva' })), tpl),
     h('section', { class: 'sec' }, h('div', { class: 'sec-h' }, h('h3', { text: 'Mis cartas' })), saved, h('div', { class: 'row' }, bJson, bOpen)),
-    h('section', { class: 'sec' }, h('div', { class: 'sec-h' }, h('h3', { text: 'Clave' })),
-      h('div', { class: 'row' }, h('span', { class: 'muted small', text: api.getKey() ? 'Clave guardada en este dispositivo.' : 'Sin clave guardada.' }),
-        h('button', { class: 'btn small ghost', type: 'button', text: api.getKey() ? 'Olvidar' : 'Escribir clave', onclick: async () => { if (api.getKey()) { api.setKey(''); toast('Clave olvidada'); } else await askKey(); renderPane(); } }))));
+    h('section', { class: 'sec' }, h('div', { class: 'sec-h' }, h('h3', { text: 'Sesión' })), auth));
 }
 
 // ---------- modo mover ----------

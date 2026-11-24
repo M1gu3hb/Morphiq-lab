@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "node scripts/dev.mjs",
-    "check": "node --check api/_lib/lab.js && node --check api/3d-may-effect/upload.js && node --check api/3d-may-effect/card.js && node --check api/3d-may-effect/default.js && node --check api/3d-may-effect/cards.js"
+    "check": "node --check api/_lib/lab.js && node --check api/3d-may-effect/session.js && node --check api/3d-may-effect/upload.js && node --check api/3d-may-effect/card.js && node --check api/3d-may-effect/default.js && node --check api/3d-may-effect/cards.js"
   },
   "engines": {
     "node": ">=20"
@@ -18,5 +18,8 @@
   "devDependencies": {
     "esbuild": "^0.28.2",
     "three": "^0.187.0"
+  },
+  "overrides": {
+    "zod": "^4.6.6"
   }
 }

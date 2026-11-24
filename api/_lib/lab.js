@@ -1,6 +1,8 @@
 // Utilidades compartidas por las funciones del laboratorio.
-// Escribir (publicar enlaces, cambiar la portada, borrar) exige la clave LAB_KEY; leer es público.
-import { createHash, timingSafeEqual } from 'node:crypto';
+// Leer una carta es público. Escribir (publicar enlaces, cambiar la portada, borrar) exige haber entrado con la
+// clave LAB_KEY: al entrar se entrega una cookie de sesión firmada (HttpOnly), así la clave nunca queda guardada
+// en el navegador.
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 export function json(res, status, body) {
   res.statusCode = status;
@@ -10,14 +12,37 @@ export function json(res, status, body) {
 }
 
 const digest = (s) => createHash('sha256').update(String(s)).digest();
-export function keyOk(key) {
-  const real = process.env.LAB_KEY;
-  if (!real || typeof key !== 'string' || !key) return false;
-  return timingSafeEqual(digest(key), digest(real)); // se comparan los hashes: misma longitud y tiempo constante
-}
+const safeEq = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && timingSafeEqual(x, y); };
+export const configured = () => Boolean(process.env.LAB_KEY);
 export const hasStore = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+export function keyOk(key) {
+  if (!configured() || typeof key !== 'string' || !key || key.length > 200) return false;
+  return timingSafeEqual(digest(key), digest(process.env.LAB_KEY)); // se comparan los hashes: misma longitud y tiempo constante
+}
 
-// Freno contra adivinar la clave: 8 fallos por IP y minuto (por instancia; la clave larga hace el resto).
+// ---- sesión ----
+const COOKIE = '__Host-morphiq-lab';
+const DAYS = 30;
+// La firma depende de LAB_KEY: cambiar la clave en Vercel cierra todas las sesiones abiertas.
+const sign = (exp) => createHmac('sha256', digest('morphiq-lab-session:' + process.env.LAB_KEY)).update(String(exp)).digest('base64url');
+const attrs = 'Path=/; HttpOnly; Secure; SameSite=Strict';
+export const sessionCookie = () => { const exp = Date.now() + DAYS * 864e5; return `${COOKIE}=${exp}.${sign(exp)}; Max-Age=${DAYS * 86400}; ${attrs}`; };
+export const clearCookie = () => `${COOKIE}=; Max-Age=0; ${attrs}`;
+export function hasSession(req) {
+  if (!configured()) return false;
+  const raw = String(req.headers.cookie || '').split(/;\s*/).find((c) => c.startsWith(COOKIE + '='));
+  if (!raw) return false;
+  const [exp, sig] = raw.slice(COOKIE.length + 1).split('.');
+  return Boolean(exp && sig && Number(exp) > Date.now() && safeEq(sig, sign(exp)));
+}
+/** Defensa CSRF además de SameSite: lo que cambia estado debe venir de este mismo origen. */
+export function sameOrigin(req) {
+  const origin = req.headers.origin;
+  if (!origin) return false;
+  try { return new URL(origin).host === req.headers.host; } catch (_) { return false; }
+}
+
+// Freno contra adivinar la clave: 8 fallos por IP y minuto (por instancia; una clave larga hace el resto).
 const fails = new Map();
 const ipOf = (req) => String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'desconocida';
 export function tooMany(req) { const f = fails.get(ipOf(req)); return Boolean(f && f.n >= 8 && Date.now() - f.t < 60_000); }
@@ -27,15 +52,15 @@ export function noteFail(req) {
   if (fails.size > 5000) fails.clear();
 }
 
-/** Devuelve true si la petición trae la clave correcta; si no, responde y devuelve false. */
+/** Devuelve true si la petición viene de una sesión válida; si no, responde y devuelve false. */
 export function guard(req, res) {
-  if (!process.env.LAB_KEY) { json(res, 503, { error: 'Falta configurar la clave del laboratorio (LAB_KEY) en Vercel.' }); return false; }
-  if (tooMany(req)) { json(res, 429, { error: 'Demasiados intentos. Espera un minuto.' }); return false; }
-  if (!keyOk(req.headers['x-lab-key'])) { noteFail(req); json(res, 401, { error: 'Clave incorrecta.' }); return false; }
+  if (!configured()) { json(res, 503, { error: 'Falta configurar la clave del laboratorio (LAB_KEY) en Vercel.' }); return false; }
+  if (req.method !== 'GET' && !sameOrigin(req)) { json(res, 403, { error: 'Origen no permitido.' }); return false; }
+  if (!hasSession(req)) { json(res, 401, { error: 'Entra con la clave del laboratorio.' }); return false; }
   return true;
 }
 export function needStore(res) {
   if (hasStore()) return true;
-  json(res, 503, { error: 'El almacenamiento (Vercel Blob) no está conectado a este proyecto.' });
+  json(res, 503, { error: 'Falta conectar el almacenamiento (Vercel Blob) a este proyecto.' });
   return false;
 }

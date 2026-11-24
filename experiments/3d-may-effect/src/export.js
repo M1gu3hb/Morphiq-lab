@@ -23,7 +23,7 @@ html,body{margin:0;height:100%;background:${bg};overflow:hidden;overscroll-behav
 #wrap{position:fixed;inset:0}
 #stage{position:absolute;inset:0;opacity:0;transition:opacity .7s ease}
 .ready #stage{opacity:1}
-#load{position:absolute;inset:0;display:grid;place-items:center;font:500 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.2em;color:#5d6a8c;text-transform:uppercase;transition:opacity .4s}
+#load{position:absolute;inset:0;display:grid;place-items:center;font:500 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.2em;color:#7483a8;text-transform:uppercase;transition:opacity .4s}
 .ready #load{opacity:0;pointer-events:none}
 </style>
 </head>

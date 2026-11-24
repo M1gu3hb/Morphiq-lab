@@ -7,7 +7,7 @@ const CSS = `
 .mc-gyro{right:14px;top:calc(var(--mc-top,14px) + env(safe-area-inset-top,0px));width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(8,12,24,.62);border:1px solid rgba(140,170,255,.18);color:#aebbdc;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:color .2s,border-color .2s,background .2s}
 .mc-gyro[aria-pressed="true"]{color:#fff;border-color:#1e5bff;background:rgba(30,91,255,.28)}
 .mc-gyro:focus-visible{outline:2px solid #38e1ff;outline-offset:2px}
-.mc-sign{left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom,0px));text-align:center;font-size:9.5px;color:#5d6a8c;pointer-events:none}
+.mc-sign{left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom,0px));text-align:center;font-size:9.5px;color:#7483a8;pointer-events:none}
 .mc-sign b{color:#8fa4d6;font-weight:600}
 @media (prefers-reduced-motion:reduce){.mc-hint{transition:none}}
 `;

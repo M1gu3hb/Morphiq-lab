@@ -1,13 +1,9 @@
-// Cliente de las funciones del experimento (enlaces compartidos y portada).
+// Cliente de las funciones del experimento (sesión, enlaces compartidos y portada).
 const BASE = '/api/3d-may-effect';
-const KEY = 'morphiq-lab:key';
-
-export const getKey = () => { try { return localStorage.getItem(KEY) || ''; } catch (_) { return ''; } };
-export const setKey = (k) => { try { k ? localStorage.setItem(KEY, k) : localStorage.removeItem(KEY); } catch (_) {} };
 const timeout = (ms) => (AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
 
-async function call(path, { method = 'GET', key, body } = {}) {
-  const res = await fetch(BASE + path, { method, headers: { ...(key ? { 'x-lab-key': key } : {}), ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+async function call(path, { method = 'GET', body } = {}) {
+  const res = await fetch(BASE + path, { method, credentials: 'same-origin', headers: body ? { 'content-type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
   let data = null; try { data = await res.json(); } catch (_) {}
   if (!res.ok) { const err = new Error((data && data.error) || `Error ${res.status}`); err.status = res.status; throw err; }
   return data;
@@ -23,22 +19,25 @@ async function fetchConfig(path) {
 export const fetchDefault = () => fetchConfig('/default');
 export const fetchCard = (id) => fetchConfig('/card?id=' + encodeURIComponent(id));
 
-export const checkKey = (key) => call('/cards', { key });
-export const listCards = (key) => call('/cards', { key });
-export const deleteCard = (id, key) => call('/card?id=' + encodeURIComponent(id), { method: 'DELETE', key });
-export const resetDefault = (key) => call('/default', { method: 'DELETE', key });
+// La sesión vive en una cookie HttpOnly: la clave se escribe una vez y no se guarda en el navegador.
+export const session = () => call('/session');
+export const login = (key) => call('/session', { method: 'POST', body: { key } });
+export const logout = () => call('/session', { method: 'DELETE' });
+export const listCards = () => call('/cards');
+export const deleteCard = (id) => call('/card?id=' + encodeURIComponent(id), { method: 'DELETE' });
+export const resetDefault = () => call('/default', { method: 'DELETE' });
 
 const newId = () => { const a = new Uint8Array(8); crypto.getRandomValues(a); return [...a].map((n) => 'abcdefghijkmnpqrstuvwxyz23456789'[n % 32]).join(''); };
 
 /** Sube la carta (ya portátil) directo al almacenamiento; la función sólo valida la clave y firma la subida. */
-export async function publish(kind, cfg, key, onProgress) {
+export async function publish(kind, cfg, onProgress) {
   const { upload } = await import('@vercel/blob/client');
   const id = kind === 'default' ? String(Date.now()) : newId();
   const pathname = `3d-may-effect/${kind === 'default' ? 'default' : 'cards'}/${id}.json`;
   const blob = new Blob([JSON.stringify(cfg)], { type: 'application/json' });
   await upload(pathname, blob, {
     access: 'public', contentType: 'application/json', handleUploadUrl: BASE + '/upload', multipart: blob.size > 8e6,
-    clientPayload: JSON.stringify({ key, kind, name: String(cfg.name || '').slice(0, 80) }),
+    clientPayload: JSON.stringify({ kind }),
     onUploadProgress: onProgress ? (e) => onProgress(e.percentage) : undefined,
   });
   return { id, size: blob.size, url: `${location.origin}/3d-may-effect/c/${id}` };

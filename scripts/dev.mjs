@@ -10,7 +10,9 @@ import { buildAll } from './build.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), dist = path.join(root, 'dist');
 const port = Number(process.env.PORT || 4321);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.glb': 'model/gltf-binary' };
-const rewrites = JSON.parse(await readFile(path.join(root, 'vercel.json'), 'utf8')).rewrites || [];
+const vercel = JSON.parse(await readFile(path.join(root, 'vercel.json'), 'utf8'));
+const rewrites = vercel.rewrites || [];
+const headersFor = (p) => Object.fromEntries((vercel.headers || []).filter((h) => new RegExp('^' + h.source + '$').test(p)).flatMap((h) => h.headers.map((x) => [x.key.toLowerCase(), x.value]))); // mismas cabeceras que producción (incluida la CSP)
 const toRe = (src) => new RegExp('^' + src.replace(/:[a-z]+/gi, '[^/]+') + '$');
 
 await buildAll();
@@ -21,13 +23,14 @@ if (!process.argv.includes('--once')) {
 
 http.createServer(async (req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  const url = p;
   if (p.startsWith('/api/')) { res.writeHead(501, { 'content-type': 'application/json' }); return res.end('{"error":"Las funciones sólo corren en Vercel"}'); }
   const rw = rewrites.find((r) => toRe(r.source).test(p)); if (rw) p = rw.destination;
   const tries = [p, p + '.html', path.posix.join(p, 'index.html')];
   for (const t of tries) {
     const file = path.join(dist, t);
     if (!file.startsWith(dist)) break;
-    try { if ((await stat(file)).isFile()) { res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' }); return res.end(await readFile(file)); } } catch (_) {}
+    try { if ((await stat(file)).isFile()) { res.writeHead(200, { ...headersFor(url), 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' }); return res.end(await readFile(file)); } } catch (_) {}
   }
-  res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }); res.end('404');
+  res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' }); res.end(await readFile(path.join(dist, '404.html')).catch(() => '404'));
 }).listen(port, () => console.log(`Morphiq Lab → http://localhost:${port}`));

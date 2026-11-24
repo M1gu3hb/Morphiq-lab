@@ -1,12 +1,12 @@
 // GET  /api/3d-may-effect/card?id=…  → { url } de una carta compartida (público)
 // DELETE (con clave)                 → elimina el enlace
 import { del, head } from '@vercel/blob';
-import { guard, json, needStore } from '../_lib/lab.js';
+import { guard, hasStore, json, needStore } from '../_lib/lab.js';
 
 export default async function handler(req, res) {
   const id = String((req.query && req.query.id) || '');
   if (!/^[a-z2-9]{8}$/.test(id)) return json(res, 400, { error: 'Identificador inválido.' });
-  if (!needStore(res)) return;
+  if (!hasStore()) return req.method === 'GET' ? json(res, 404, { error: 'Esa carta no existe.' }) : needStore(res);
   const pathname = `3d-may-effect/cards/${id}.json`;
   try {
     if (req.method === 'GET') { const b = await head(pathname); return json(res, 200, { url: b.url, size: b.size }); }
