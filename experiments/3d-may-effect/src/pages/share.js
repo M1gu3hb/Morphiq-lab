@@ -1,10 +1,11 @@
-// Visor de una carta compartida: /3d-may-effect/c/<id>
+// Visor de una carta compartida: /3d-may-effect/<nombre>
 import { MorphCard } from '../engine/index.js';
 import { mountChrome } from '../ui/chrome.js';
-import { fetchCard } from '../api.js';
+import { fetchCard, slugOk } from '../api.js';
 
 (async () => {
-  const id = (location.pathname.split('/c/')[1] || '').replace(/[^a-z0-9]/gi, '').slice(0, 32);
+  const parts = location.pathname.split('/').filter(Boolean), last = parts.length > 1 ? parts[parts.length - 1] : '';
+  const id = slugOk(last) ? last : '';
   const root = document.documentElement, missing = () => root.classList.add('is-missing');
   if (!id) return missing();
   const cfg = await fetchCard(id);

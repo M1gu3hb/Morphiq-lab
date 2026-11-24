@@ -265,11 +265,45 @@ async function needSession(storage = false) {
   if (storage && S.storage === false) { toast('Falta conectar el almacenamiento (Vercel Blob) al proyecto en Vercel', 'err'); return false; }
   return true;
 }
+// Propuesta de nombre: las primeras palabras de la carta que quepan en 16 letras («Astral Morphiq Systems» → «astral-morphiq»).
+const shortSlug = (name) => { const w = api.cleanSlug(name).split('-').filter(Boolean); let out = w.shift() || 'carta'; for (const x of w) { if ((out + '-' + x).length > 16) break; out += '-' + x; } return out.slice(0, 32); };
+
+/** Pide el nombre corto del enlace. Si ya existe, avisa que se va a actualizar. */
+function askSlug() {
+  return modal('Nombre del enlace', (close) => {
+    const i = h('input', { type: 'text', value: S.cfg.link || shortSlug(S.cfg.name), maxLength: 32, autocapitalize: 'none', autocomplete: 'off', spellcheck: false, 'aria-label': 'Nombre del enlace' });
+    const pre = h('p', { class: 'mono small muted' });
+    const msg = h('p', { class: 'hint', text: 'Corto y fácil de dictar: minúsculas, números y guiones.' });
+    const go = h('button', { class: 'btn small primary', type: 'button', text: 'Crear enlace' });
+    let confirmed = '';
+    const sync = () => { i.value = i.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-'); pre.textContent = `${location.host}/3d-may-effect/${i.value || '…'}`; confirmed = ''; go.textContent = 'Crear enlace'; msg.classList.remove('err'); };
+    const run = async () => {
+      const slug = api.cleanSlug(i.value); i.value = slug; pre.textContent = `${location.host}/3d-may-effect/${slug || '…'}`;
+      if (!api.slugOk(slug)) { msg.textContent = slug ? 'Ese nombre está reservado. Prueba con otro.' : 'Escribe un nombre.'; msg.classList.add('err'); return; }
+      if (confirmed === slug) return close(slug);
+      go.disabled = true;
+      try {
+        if (await api.cardExists(slug)) { confirmed = slug; msg.textContent = 'Ese enlace ya existe: se actualizará con esta carta.'; go.textContent = 'Actualizar enlace'; }
+        else close(slug);
+      } catch (e) { msg.textContent = e.message || 'No se pudo comprobar el nombre.'; msg.classList.add('err'); }
+      go.disabled = false;
+    };
+    i.addEventListener('input', sync); i.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+    go.addEventListener('click', run); sync();
+    return [i, pre, msg, h('div', { class: 'row end' }, h('button', { class: 'btn small ghost', type: 'button', text: 'Cancelar', onclick: () => close(null) }), go)];
+  });
+}
 async function publish(kind, btn) {
   if (!(await needSession(true))) return null;
+  const slug = kind === 'card' ? await askSlug() : null;
+  if (kind === 'card' && !slug) return null;
   return withBusy(btn, 'Preparando…', async () => {
     const cfg = await card.portable();
-    try { return await api.publish(kind, cfg, (p) => { btn.textContent = `Subiendo ${Math.round(p)}%`; }); }
+    try {
+      const r = await api.publish(kind, cfg, (p) => { btn.textContent = `Subiendo ${Math.round(p)}%`; }, slug);
+      if (slug && S.cfg.link !== slug) { S.cfg.link = slug; dirty(false); } // la próxima vez propone el mismo enlace
+      return r;
+    }
     catch (e) {
       const st = await api.session().catch(() => null); // ¿falló por la sesión o por la red?
       if (st && !st.ok) { S.auth = false; throw new Error('La sesión caducó. Vuelve a intentarlo.'); }
@@ -292,7 +326,7 @@ function paneOut(pane) {
   const bLink = h('button', { class: 'btn wide', type: 'button', html: icon('link') + '<span>Crear enlace para compartir</span>' });
   bLink.addEventListener('click', async () => { const r = await publish('card', bLink); if (r) { showLink(r.url); copy(r.url); } });
   const bDef = h('button', { class: 'btn wide', type: 'button', html: icon('star') + '<span>Usar como portada del experimento</span>' });
-  bDef.addEventListener('click', async () => { const r = await publish('default', bDef); if (r) toast('Listo: esta carta ya es la portada'); });
+  bDef.addEventListener('click', async () => { const r = await publish('default', bDef); if (r) { api.pruneDefault(); toast('Listo: esta carta ya es la portada'); } });
   const bReset = h('button', { class: 'btn small ghost', type: 'button', text: 'Volver a la portada original' });
   bReset.addEventListener('click', async () => { if (!(await needSession(true))) return; await withBusy(bReset, 'Restaurando…', async () => { await api.resetDefault(); toast('Portada original restaurada'); }); });
   const bJson = h('button', { class: 'btn small', type: 'button', text: 'Guardar proyecto (.json)' });
@@ -320,8 +354,8 @@ function paneOut(pane) {
     await withBusy(bLinks, 'Cargando…', async () => {
       const { cards } = await api.listCards(); links.textContent = '';
       if (!cards.length) links.append(h('p', { class: 'muted small', text: 'Aún no has publicado enlaces.' }));
-      cards.forEach((c) => { const url = `${location.origin}/3d-may-effect/c/${c.id}`; links.append(h('div', { class: 'lrow' },
-        h('a', { href: url, target: '_blank', rel: 'noopener', class: 'mono small', text: '/c/' + c.id }), h('span', { class: 'muted small', text: `${(c.size / 1e6).toFixed(1)} MB · ${new Date(c.uploadedAt).toLocaleDateString('es-MX')}` }),
+      cards.forEach((c) => { const url = api.linkFor(c.id); links.append(h('div', { class: 'lrow' },
+        h('a', { href: url, target: '_blank', rel: 'noopener', class: 'mono small', text: '/' + c.id }), h('span', { class: 'muted small', text: `${(c.size / 1e6).toFixed(1)} MB · ${new Date(c.uploadedAt).toLocaleDateString('es-MX')}` }),
         h('button', { class: 'ic', type: 'button', 'aria-label': 'Copiar enlace', html: icon('copy', 16), onclick: () => copy(url) }),
         h('button', { class: 'ic danger', type: 'button', 'aria-label': 'Eliminar enlace', html: icon('trash', 16), onclick: async () => { if (await confirmBox('Eliminar enlace', 'El enlace dejará de funcionar para todos.')) { try { await api.deleteCard(c.id); bLinks.click(); } catch (e) { toast(e.message, 'err'); } } } }))); });
     });

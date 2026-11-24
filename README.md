@@ -7,7 +7,7 @@ Laboratorio de componentes, interfaces y animaciones de Morphiq. Cada idea vive 
 | `/` | Librería: todos los experimentos |
 | `/3d-may-effect` | Portada del experimento 001 (la carta predeterminada) |
 | `/3d-may-effect/lab` | Editor de cartas |
-| `/3d-may-effect/c/<id>` | Una carta compartida por enlace |
+| `/3d-may-effect/<nombre>` | Una carta compartida por enlace (el nombre lo eliges al publicar) |
 
 ## Estructura
 
@@ -33,9 +33,10 @@ npm install
 npm run dev        # http://localhost:4321 (reconstruye al guardar)
 npm run build      # genera dist/
 npm run check      # sintaxis de las funciones
+npm test           # pruebas de las funciones (sesión, origen, rutas)
 ```
 
-Las funciones de `/api` no corren en `npm run dev`; para probarlas en local usa `vercel dev` con las variables de entorno.
+`npm run dev` también ejecuta las funciones de `/api` con las variables de entorno que tenga la terminal (`LAB_KEY`, `BLOB_READ_WRITE_TOKEN`). `npm test` comprueba sesión, origen y reglas de rutas sin tocar la red.
 
 ## 3D May Effect
 

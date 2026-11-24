@@ -9,6 +9,10 @@
     {
       "source": "/3d-may-effect/c/:id",
       "destination": "/3d-may-effect/c"
+    },
+    {
+      "source": "/3d-may-effect/:id",
+      "destination": "/3d-may-effect/c"
     }
   ],
   "headers": [

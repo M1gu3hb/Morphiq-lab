@@ -20,6 +20,11 @@ export function keyOk(key) {
   return timingSafeEqual(digest(key), digest(process.env.LAB_KEY)); // se comparan los hashes: misma longitud y tiempo constante
 }
 
+// Nombre corto de un enlace (mantener igual que en experiments/3d-may-effect/src/api.js).
+const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
+const RESERVED = ['lab', 'c', 'js', 'assets', 'api', 'index', 'default', 'cards'];
+export const slugOk = (s) => typeof s === 'string' && SLUG_RE.test(s) && !RESERVED.includes(s);
+
 // ---- sesión ----
 const COOKIE = '__Host-morphiq-lab';
 const DAYS = 30;
