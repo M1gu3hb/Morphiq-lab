@@ -1,0 +1,22 @@
+{
+  "name": "morphiq-lab",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Morphiq Lab — laboratorio de componentes, UI y animaciones.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/dev.mjs",
+    "check": "node --check api/_lib/lab.js && node --check api/3d-may-effect/upload.js && node --check api/3d-may-effect/card.js && node --check api/3d-may-effect/default.js && node --check api/3d-may-effect/cards.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.9.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "three": "^0.187.0"
+  }
+}

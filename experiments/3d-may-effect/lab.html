@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<title>Laboratorio · 3D May Effect · Morphiq Lab</title>
+<meta name="description" content="Editor de cartas con profundidad: capas, holo, modelos 3D y exportación a HTML.">
+<meta name="theme-color" content="#03050b">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/brand/mh-mark.png">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/geist.woff2" crossorigin>
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/lab.css">
+<link rel="stylesheet" href="/3d-may-effect/assets/editor.css">
+</head>
+<body class="labapp">
+<header class="bar">
+  <a class="bar-brand" href="/3d-may-effect" aria-label="Volver a la portada de 3D May Effect"><img src="/brand/mh-mark.png" alt="Morphiq" width="34" height="34"></a>
+  <input id="name" class="name" aria-label="Nombre de la carta" maxlength="60" spellcheck="false" autocomplete="off">
+  <span id="saved" class="saved" aria-live="polite"></span>
+  <button id="undo" class="ic" type="button" aria-label="Deshacer" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+  <button id="redo" class="ic" type="button" aria-label="Rehacer" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+</header>
+<section class="stagewrap" aria-label="Vista previa de la carta">
+  <div id="stage"></div>
+  <div id="selbox" class="selbox" hidden></div>
+  <p id="stagehint" class="stagehint" aria-live="polite"></p>
+  <div class="modes" role="group" aria-label="Modo del escenario">
+    <button type="button" data-mode="tilt" aria-pressed="true">Inclinar</button>
+    <button type="button" data-mode="move" aria-pressed="false">Mover capa</button>
+  </div>
+</section>
+<section class="panel" aria-label="Editor">
+  <nav class="tabs" role="tablist" aria-label="Secciones del editor">
+    <button type="button" role="tab" data-tab="layers" aria-selected="true">Capas</button>
+    <button type="button" role="tab" data-tab="edit" aria-selected="false">Editar</button>
+    <button type="button" role="tab" data-tab="card" aria-selected="false">Carta</button>
+    <button type="button" role="tab" data-tab="out" aria-selected="false">Salida</button>
+  </nav>
+  <div class="pane" id="pane" role="tabpanel"></div>
+</section>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<div id="modal" class="modal" hidden></div>
+<script type="module" src="/3d-may-effect/js/lab.js"></script>
+</body>
+</html>

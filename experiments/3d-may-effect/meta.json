@@ -1,0 +1,8 @@
+{
+  "title": "3D May Effect",
+  "summary": "Cartas con profundidad real: capas, holo y objetos 3D que se salen del marco al inclinarlas.",
+  "tags": ["3D", "WebGL", "Holo", "Editor"],
+  "date": "2026-11-24",
+  "number": "001",
+  "cover": "/3d-may-effect/assets/cover.webp"
+}

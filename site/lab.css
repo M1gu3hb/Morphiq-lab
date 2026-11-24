@@ -1,0 +1,31 @@
+/* Morphiq Lab — base compartida por la librería y todos los experimentos. */
+:root{
+  --bg:#03050b; --bg-2:#070b16; --panel:#0a0f1d; --panel-2:#0e1528; --line:rgba(140,170,255,.14); --line-2:rgba(140,170,255,.26);
+  --blue:#1e5bff; --blue-2:#3d7bff; --cyan:#38e1ff; --text:#e9eefb; --muted:#8a97b8; --dim:#5d6a8c; --steel:#b4c0d8; --danger:#ff5d6c; --ok:#3ddc97;
+  --display:"Michroma","Geist",system-ui,sans-serif; --ui:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:14px; --ease:cubic-bezier(.2,.8,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--text);font:400 15px/1.5 var(--ui);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+img{max-width:100%;display:block}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:6px}
+.mono{font-family:var(--mono)}
+
+.brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;min-height:44px}
+.brand img{height:30px;width:auto}
+.brand-tag{font:600 10px/1 var(--mono);letter-spacing:.24em;color:var(--cyan);padding:5px 7px 5px 9px;border:1px solid rgba(56,225,255,.35);border-radius:6px;background:rgba(56,225,255,.06)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 20px;border-radius:12px;border:1px solid var(--line-2);background:rgba(14,21,40,.7);color:var(--text);font:600 14px/1 var(--ui);letter-spacing:.01em;text-decoration:none;cursor:pointer;transition:transform .2s var(--ease),background .2s,border-color .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+.btn:hover{border-color:rgba(140,170,255,.5);background:rgba(20,30,58,.85)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:linear-gradient(180deg,#2b68ff,#1747d6);border-color:#4d83ff;box-shadow:0 8px 28px -8px rgba(30,91,255,.75),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn.primary:hover{background:linear-gradient(180deg,#3d76ff,#1c50e6)}
+.btn.ghost{background:transparent}
+.btn.small{min-height:40px;padding:0 14px;font-size:13px;border-radius:10px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn svg{flex:none}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
