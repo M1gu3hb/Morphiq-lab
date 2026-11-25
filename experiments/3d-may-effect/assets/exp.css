@@ -22,6 +22,7 @@ body.exp{height:100dvh;overflow:hidden;overscroll-behavior:none;background:var(-
 body.exp{--mc-top:58px}
 body.landing .mc-hint{display:none}
 body.shared{--mc-bottom:78px}
+.topbar .brand.static{pointer-events:none} /* en la vista compartida el logo sólo es marca: no enlaza y deja pasar el toque a la carta */
 
 @media (min-width:900px){
   .topbar{padding:20px 32px}
@@ -41,4 +42,4 @@ body.shared .lede{margin-bottom:14px}
 .is-missing .notfound{display:grid}
 .is-missing .hero,.is-missing .loading{display:none}
 .notfound h1{font:400 22px/1.2 var(--display);margin:0 0 10px}
-.notfound p{color:var(--muted);margin:0 0 18px}
+.notfound p{color:var(--muted);margin:0}
