@@ -21,7 +21,7 @@ body.exp{height:100dvh;overflow:hidden;overscroll-behavior:none;background:var(-
 .is-ready .reveal>*:nth-child(2){transition-delay:.08s}.is-ready .reveal>*:nth-child(3){transition-delay:.16s}.is-ready .reveal>*:nth-child(4){transition-delay:.24s}
 body.exp{--mc-top:58px}
 body.landing .mc-hint{display:none}
-body.shared{--mc-bottom:112px}
+body.shared{--mc-bottom:78px}
 
 @media (min-width:900px){
   .topbar{padding:20px 32px}
@@ -34,7 +34,7 @@ body.shared{--mc-bottom:112px}
 
 /* Visor de una carta compartida */
 body.shared .hero{padding-top:40px}
-body.shared .hero h1{font-size:clamp(17px,4.4vw,24px);margin-bottom:12px}
+body.shared .hero h1{font-size:clamp(17px,4.4vw,24px);margin-bottom:0}
 body.shared .lede{margin-bottom:14px}
 @media (min-width:900px){body.shared .hero{top:auto;bottom:34px;left:32px;width:auto;max-width:420px}}
 .notfound{position:fixed;inset:0;display:none;place-items:center;text-align:center;padding:24px;z-index:8}

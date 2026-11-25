@@ -16,7 +16,6 @@ import { fetchCard, slugOk } from '../api.js';
     await card.load(cfg);
     document.getElementById('title').textContent = cfg.name || 'Carta 3D';
     document.title = `${cfg.name || 'Carta 3D'} · Morphiq Lab`;
-    document.getElementById('remix').href = '/3d-may-effect/lab?from=' + id;
     mountChrome(card, document.body, { hint: true });
     root.classList.add('is-ready');
   } catch (e) { console.error(e); missing(); }
