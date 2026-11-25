@@ -6,7 +6,16 @@ import { fetchCard, slugOk } from '../api.js';
 (async () => {
   const parts = location.pathname.split('/').filter(Boolean), last = parts.length > 1 ? parts[parts.length - 1] : '';
   const id = slugOk(last) ? last : '';
-  const root = document.documentElement, missing = () => root.classList.add('is-missing');
+  // El HTML no trae título ni textos (para que el enlace no genere vista previa al compartirlo): se ponen aquí.
+  document.title = 'Carta 3D · Morphiq Lab';
+  const root = document.documentElement;
+  const missing = () => {
+    document.title = 'Carta no encontrada · Morphiq Lab';
+    const box = document.createElement('div'), h1 = document.createElement('h1'), p = document.createElement('p');
+    h1.textContent = 'Esta carta ya no existe'; p.textContent = 'El enlace se eliminó o está mal escrito.';
+    box.append(h1, p); document.querySelector('.notfound').replaceChildren(box);
+    root.classList.add('is-missing');
+  };
   if (!id) return missing();
   const cfg = await fetchCard(id);
   if (!cfg) return missing();

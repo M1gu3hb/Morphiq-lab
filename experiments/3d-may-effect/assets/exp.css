@@ -6,7 +6,10 @@ body.exp{height:100dvh;overflow:hidden;overscroll-behavior:none;background:var(-
 .is-ready .loading{opacity:0}
 .topbar{position:fixed;left:0;right:0;top:0;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;pointer-events:none}
 .topbar>*{pointer-events:auto}
-.topbar .brand img{height:26px}
+.topbar .brand img,.topbar .brand-logo{height:26px}
+.brand-logo{display:block;aspect-ratio:750/211;background:url(/brand/morphiq-logo-sm.webp) left center/contain no-repeat}
+.lab-tag::after{content:"LAB"}
+body.shared .loading::after{content:"Cargando…"}
 .exp-no{font:600 10px/1 var(--mono);letter-spacing:.22em;color:var(--steel)}
 .hero{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:56px 20px calc(22px + env(safe-area-inset-bottom,0px));text-align:center;pointer-events:none;
   background:linear-gradient(180deg,transparent,rgba(3,5,11,.86) 46%,rgba(3,5,11,.96))}
@@ -26,7 +29,7 @@ body.shared{--mc-bottom:78px}
 
 @media (min-width:900px){
   .topbar{padding:20px 32px}
-  .topbar .brand img{height:32px}
+  .topbar .brand img,.topbar .brand-logo{height:32px}
   .hero{left:6vw;right:auto;top:0;bottom:0;width:min(440px,38vw);display:flex;flex-direction:column;justify-content:center;text-align:left;padding:0;background:none}
   .hero h1{font-size:clamp(36px,3.6vw,56px)}
   .lede{margin-left:0;font-size:16px}

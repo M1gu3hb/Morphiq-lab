@@ -3,15 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Carta 3D · Morphiq Lab</title>
-<meta name="description" content="Una carta con profundidad hecha en Morphiq Lab. Arrástrala para inclinarla.">
+<!-- Vista de un enlace compartido. A propósito NO lleva título, descripción, imagen para compartir ni texto en el
+     HTML: así WhatsApp, Instagram y demás muestran el enlace solo, sin tarjeta de vista previa.
+     El título de la pestaña, el logo y los textos los ponen share.js y la hoja de estilos. -->
+<title></title>
 <meta name="theme-color" content="#03050b">
 <meta name="robots" content="noindex">
-<meta property="og:title" content="Carta 3D · Morphiq Lab">
-<meta property="og:description" content="Arrástrala para ver la profundidad.">
-<meta property="og:image" content="https://morphiqlab.vercel.app/3d-may-effect/assets/cover.webp">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/brand/mh-mark.png">
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="/lab.css">
@@ -19,22 +16,17 @@
 </head>
 <body class="exp shared">
 <div id="stage" class="stage"></div>
-<div class="loading" aria-hidden="true">Cargando…</div>
+<div class="loading" aria-hidden="true"></div>
 <header class="topbar">
   <div class="brand static">
-    <img src="/brand/morphiq-logo-sm.webp" alt="Morphiq — Astral Morphiq Systems" width="750" height="211">
-    <span class="brand-tag">LAB</span>
+    <span class="brand-logo" role="img" aria-label="Morphiq — Astral Morphiq Systems"></span>
+    <span class="brand-tag lab-tag"></span>
   </div>
 </header>
 <main class="hero reveal">
   <h1 id="title"></h1>
 </main>
-<div class="notfound">
-  <div>
-    <h1>Esta carta ya no existe</h1>
-    <p>El enlace se eliminó o está mal escrito.</p>
-  </div>
-</div>
+<div class="notfound"></div>
 <script type="module" src="/3d-may-effect/js/share.js"></script>
 </body>
 </html>
