@@ -7,14 +7,15 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "node scripts/dev.mjs",
-    "check": "node --check api/_lib/lab.js && node --check api/3d-may-effect/session.js && node --check api/3d-may-effect/upload.js && node --check api/3d-may-effect/card.js && node --check api/3d-may-effect/default.js && node --check api/3d-may-effect/cards.js",
+    "check": "node --check middleware.js && node --check api/_lib/lab.js && node --check api/gate.js && node --check api/3d-may-effect/session.js && node --check api/3d-may-effect/upload.js && node --check api/3d-may-effect/card.js && node --check api/3d-may-effect/default.js && node --check api/3d-may-effect/cards.js",
     "test": "node scripts/test-api.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@vercel/blob": "^2.9.0"
+    "@vercel/blob": "^2.9.0",
+    "@vercel/functions": "^3.11.3"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

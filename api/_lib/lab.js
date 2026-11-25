@@ -86,6 +86,24 @@ export function setupCode() {
 }
 export const setupCodeOk = (code) => typeof code === 'string' && safeEq(code.trim().toLowerCase().replace(/[^a-z0-9]/g, ''), setupCode().replace('-', ''));
 
+// ---- candado del sitio (código de acceso) ----
+// La librería, la portada y el editor piden un código una vez por dispositivo (lo aplica middleware.js).
+// Aquí sólo vive el hash del código. Su sal incluye el código de configuración, que sale del token del almacén:
+// sin ese secreto del servidor el hash no se puede atacar por fuerza bruta aunque el repositorio sea público.
+// Para cambiar el código: define GATE_PIN en Vercel (tiene prioridad) o vuelve a generar este hash.
+const GATE_HASH = '94c284476014b2af60308c723cff76f3f59de494dfccff233acd9f7e8a702696';
+const GATE_COOKIE = '__Host-morphiq-gate';
+const GATE_DAYS = 180;
+export const gateOn = () => Boolean(root());
+export async function gatePinOk(pin) {
+  if (typeof pin !== 'string' || pin.length < 4 || pin.length > 64 || !root()) return false;
+  if (process.env.GATE_PIN) return timingSafeEqual(digest(pin), digest(process.env.GATE_PIN));
+  const h = await scryptAsync(pin, 'morphiq-gate:' + setupCode().replace('-', ''), 32, { N: 16384, r: 8, p: 1 });
+  return safeEq(h.toString('hex'), GATE_HASH);
+}
+// La firma se calcula igual en middleware.js: HMAC-SHA256(sha256('morphiq-lab:gate:' + raíz), caducidad).
+export const gateCookie = () => { const exp = Date.now() + GATE_DAYS * 864e5; return `${GATE_COOKIE}=${exp}.${mac('gate', exp).toString('base64url')}; Max-Age=${GATE_DAYS * 86400}; Path=/; HttpOnly; Secure; SameSite=Lax`; };
+
 // ---- sesión ----
 const COOKIE = '__Host-morphiq-lab';
 const DAYS = 30;

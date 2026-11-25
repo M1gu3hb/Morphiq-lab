@@ -6,6 +6,7 @@ import { watch } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildAll } from './build.mjs';
+import gate, { config as gateConfig } from '../middleware.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), dist = path.join(root, 'dist');
 const port = Number(process.env.PORT || 4321);
@@ -64,6 +65,11 @@ http.createServer(async (req, res) => {
       }
       return false;
     };
+    // El candado (middleware.js) corre antes que los archivos, igual que en Vercel.
+    if (gateConfig.matcher.includes(p)) {
+      const to = gate(new Request('http://localhost' + req.url, { headers: { cookie: req.headers.cookie || '' } })).headers.get('x-middleware-rewrite');
+      if (to) { if (await serve(new URL(to).pathname)) return; }
+    }
     if (await serve(p)) return;
     const rw = rewrites.find((r) => toRe(r.source).test(p));
     if (rw && (await serve(rw.destination))) return;

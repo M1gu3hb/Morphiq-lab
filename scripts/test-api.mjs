@@ -113,4 +113,31 @@ assert.equal((await call(session, { cookie: envLogin.cookie.split(';')[0] })).js
 assert.equal((await call(session, { cookie })).json.ok, false); ok('las cookies firmadas con la otra raíz no valen');
 assert.equal((await post({ change: { key: 'otra clave larga' } }, { cookie: envLogin.cookie.split(';')[0] })).status, 409); ok('con LAB_KEY la clave no se cambia desde el laboratorio');
 
+console.log('Candado del sitio');
+delete process.env.LAB_KEY; process.env.GATE_PIN = 'prueba-1234';
+const gateApi = (await import('../api/gate.js')).default;
+const mw = await import('../middleware.js');
+const ROOT = process.env.BLOB_READ_WRITE_TOKEN;
+const knock = (pin, extra = {}) => call(gateApi, { method: 'POST', body: { pin }, origin: ORIGIN, ip: '7.7.7.7', ...extra });
+assert.equal((await knock('prueba-1234', { origin: undefined })).status, 403); ok('el código sin cabecera Origin se rechaza');
+assert.equal((await knock('0000')).status, 401); assert.equal((await knock('')).status, 401); ok('código incorrecto o vacío → 401');
+const pass = await knock('prueba-1234');
+assert.equal(pass.status, 200); assert.match(pass.cookie, /^__Host-morphiq-gate=\d+\.[\w-]+; Max-Age=15552000; Path=\/; HttpOnly; Secure; SameSite=Lax$/); ok('código correcto → cookie de acceso HttpOnly/Secure (180 días)');
+const gc = pass.cookie.split(';')[0], [gname, gval] = gc.split('='), [gexp, gsig] = gval.split('.');
+assert.equal(mw.hasAccess(gc, ROOT), true); assert.equal(mw.hasAccess(`otra=1; ${gc}`, ROOT), true); ok('el middleware acepta la cookie firmada por la función');
+assert.equal(mw.hasAccess('', ROOT), false); assert.equal(mw.hasAccess(`${gname}=${Number(gexp) + 1}.${gsig}`, ROOT), false); assert.equal(mw.hasAccess(`${gname}=${gexp}.${gsig.slice(0, -2)}xx`, ROOT), false);
+assert.equal(mw.hasAccess(`${gname}=1000.${gsig}`, ROOT), false); assert.equal(mw.hasAccess(gc, 'otra-raiz'), false); assert.equal(mw.hasAccess(gc, ''), false); ok('sin cookie, alterada, caducada o de otra raíz → sin acceso');
+assert.equal(mw.hasAccess(cookie, ROOT), false); ok('la cookie de sesión del editor no sirve como acceso (son firmas distintas)');
+const visit = (path, c) => mw.default(new Request('https://lab.test' + path, { headers: c ? { cookie: c } : {} }));
+assert.match(visit('/').headers.get('x-middleware-rewrite'), /\/gate$/); assert.match(visit('/3d-may-effect/lab').headers.get('x-middleware-rewrite'), /\/gate$/); ok('sin acceso, las páginas privadas muestran la pantalla de acceso');
+assert.equal(visit('/', gc).headers.get('x-middleware-next'), '1'); assert.equal(visit('/3d-may-effect/lab', gc).headers.get('x-middleware-rewrite'), null); ok('con acceso, pasan');
+const M = mw.config.matcher;
+assert.ok(M.every((m) => !/[:*(]/.test(m))); for (const pub of ['/3d-may-effect/demo', '/3d-may-effect/c/demo', '/gate', '/api/gate', '/3d-may-effect/js/share.js', '/api/3d-may-effect/card']) assert.ok(!M.includes(pub), pub);
+for (const priv of ['/', '/experiments.json', '/3d-may-effect', '/3d-may-effect/lab']) assert.ok(M.includes(priv), priv);
+ok('los enlaces compartidos y sus archivos quedan fuera del candado; librería, portada y editor dentro');
+delete process.env.GATE_PIN;
+assert.equal((await knock('0000', { ip: '7.7.7.8' })).status, 401); ok('sin GATE_PIN se usa el hash guardado (un código cualquiera no entra)');
+let g; for (let i = 0; i < 9; i++) g = await knock('1111', { ip: '6.6.6.6' });
+assert.equal(g.status, 429); ok('tras 8 códigos malos seguidos → 429');
+
 console.log(`\n${n} comprobaciones correctas`);

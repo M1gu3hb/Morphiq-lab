@@ -7,7 +7,9 @@ Laboratorio de componentes, interfaces y animaciones de Morphiq. Cada idea vive 
 | `/` | Librería: todos los experimentos |
 | `/3d-may-effect` | Portada del experimento 001 (la carta predeterminada) |
 | `/3d-may-effect/lab` | Editor de cartas |
-| `/3d-may-effect/<nombre>` | Una carta compartida por enlace (el nombre lo eliges al publicar) |
+| `/3d-may-effect/<nombre>` | Una carta compartida por enlace (el nombre lo eliges al publicar). Pública |
+
+Todo lo demás pide el código de acceso (ver «Acceso privado»).
 
 ## Estructura
 
@@ -72,6 +74,15 @@ Variables de entorno en Vercel:
 **Si olvidas la clave:** borra el archivo de `3d-may-effect/_auth/` en el almacén (Vercel → Storage → morphiqlab-blob → Manage Blobs) y vuelve a crearla con el código de configuración.
 
 Sin almacén el sitio funciona igual: sólo se desactivan los enlaces y el cambio de portada. La exportación a HTML no depende de él.
+
+### Acceso privado
+
+La librería (`/`), la portada del experimento y el editor piden un **código de acceso** una vez por dispositivo (dura 180 días). Los enlaces compartidos (`/3d-may-effect/<nombre>`) siguen públicos, sin código.
+
+- `middleware.js` decide qué rutas son privadas (lista `matcher`). **Experimento nuevo → añade ahí sus páginas privadas.**
+- `api/gate.js` comprueba el código y entrega la cookie de acceso; la pantalla está en `site/gate/`.
+- El código no está en el repositorio: sólo su hash, y la sal depende de un secreto del servidor. Para cambiarlo, define `GATE_PIN` en las variables de entorno de Vercel (tiene prioridad sobre el hash) y vuelve a desplegar.
+- Es un candado contra curiosos, no una caja fuerte: un código de 4 dígitos se puede adivinar con paciencia. Lo que de verdad importa (publicar, cambiar la portada, borrar) sigue protegido por la clave del laboratorio.
 
 ### Seguridad
 

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Morphiq Lab</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#03050b">
+<meta property="og:title" content="Morphiq Lab">
+<meta property="og:image" content="https://morphiqlab.vercel.app/3d-may-effect/assets/cover.webp">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/brand/mh-mark.png">
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/lab.css">
+<link rel="stylesheet" href="/gate.css">
+</head>
+<body class="gate">
+<main class="gate-box">
+  <img class="gate-logo" src="/brand/morphiq-logo-sm.webp" alt="Morphiq — Astral Morphiq Systems" width="750" height="211">
+  <p class="gate-tag">LAB · Acceso privado</p>
+  <form id="gate" class="gate-form" autocomplete="off" novalidate>
+    <label for="pin">Código de acceso</label>
+    <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="64" required aria-describedby="msg">
+    <button class="btn primary" type="submit">Entrar</button>
+    <p id="msg" class="gate-msg" role="status" aria-live="polite"></p>
+  </form>
+</main>
+<script src="/gate.js" defer></script>
+</body>
+</html>
