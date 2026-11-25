@@ -6,7 +6,7 @@ const PREFIX = '3d-may-effect/cards/';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return json(res, 405, { error: 'Método no permitido.' });
-  if (!guard(req, res)) return;
+  if (!(await guard(req, res))) return;
   if (!hasStore()) return json(res, 200, { cards: [], storage: false });
   try {
     const { blobs } = await list({ prefix: PREFIX, limit: 1000 });

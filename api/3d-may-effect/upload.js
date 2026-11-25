@@ -8,7 +8,7 @@ const DEFAULT = /^3d-may-effect\/default\/\d{13}\.json$/;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Método no permitido.' });
-  if (!guard(req, res)) return;
+  if (!(await guard(req, res))) return;
   if (!needStore(res)) return;
   try {
     const out = await handleUpload({

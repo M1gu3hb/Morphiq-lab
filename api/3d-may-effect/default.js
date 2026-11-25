@@ -8,7 +8,7 @@ const PREFIX = '3d-may-effect/default/';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'DELETE') return json(res, 405, { error: 'Método no permitido.' });
-  if (req.method === 'DELETE' && !guard(req, res)) return; // la sesión se valida antes de tocar el almacén
+  if (req.method === 'DELETE' && !(await guard(req, res))) return; // la sesión se valida antes de tocar el almacén
   if (!hasStore()) return req.method === 'GET' ? json(res, 200, { url: null }) : needStore(res); // sin almacén la portada es la original
   try {
     const { blobs } = await list({ prefix: PREFIX, limit: 100 });

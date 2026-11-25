@@ -36,7 +36,7 @@ npm run check      # sintaxis de las funciones
 npm test           # pruebas de las funciones (sesión, origen, rutas)
 ```
 
-`npm run dev` también ejecuta las funciones de `/api` con las variables de entorno que tenga la terminal (`LAB_KEY`, `BLOB_READ_WRITE_TOKEN`). `npm test` comprueba sesión, origen y reglas de rutas sin tocar la red.
+`npm run dev` también ejecuta las funciones de `/api` con las variables de entorno que tenga la terminal. Con `LAB_FAKE_STORE=1 npm run dev` la clave se guarda en memoria, para probar el alta y el acceso sin tocar Vercel. `npm test` comprueba sesión, origen y reglas de rutas sin tocar la red.
 
 ## 3D May Effect
 
@@ -60,19 +60,24 @@ Unidades: `1` = ancho de la carta; `depth < 0` es hacia adentro y `depth > 0` se
 
 ### Enlaces y portada
 
-Los enlaces compartidos y la carta fijada como portada se guardan en **Vercel Blob**. Ver una carta es público; publicar, cambiar la portada o borrar exige entrar con la clave del laboratorio. Al entrar, el servidor entrega una cookie de sesión firmada (HttpOnly, 30 días): la clave no se guarda en el navegador.
+Los enlaces compartidos y la carta fijada como portada se guardan en **Vercel Blob** (almacén público `morphiqlab-blob`, conectado al proyecto). Ver una carta es público; publicar, cambiar la portada o borrar exige entrar con la clave del laboratorio.
 
-Variables de entorno en Vercel (Production):
+**La clave se crea desde el propio laboratorio**, en *Salida → Sesión → Crear clave*. La primera vez pide un código de configuración que el servidor escribe en los registros de Vercel (Logs del proyecto, busca «Código de configuración»): así sólo quien tiene acceso al proyecto puede crearla. La clave se guarda como hash scrypt con sal, nunca en texto claro, y se puede cambiar después desde el mismo sitio (eso cierra las demás sesiones). Al entrar, el servidor entrega una cookie de sesión firmada (HttpOnly, 30 días): la clave no se guarda en el navegador.
 
-- `LAB_KEY` — clave del laboratorio, larga y aleatoria. Sólo en variables de entorno, nunca en Git. Cambiarla cierra todas las sesiones.
-- `BLOB_READ_WRITE_TOKEN` — la crea Vercel al conectar un almacén Blob (Storage → Create → Blob → Connect to project).
+Variables de entorno en Vercel:
 
-Sin esas variables el sitio funciona igual: sólo se desactivan los enlaces y el cambio de portada. La exportación a HTML no depende de ellas.
+- `BLOB_READ_WRITE_TOKEN` — la crea Vercel al conectar el almacén Blob. Además de dar acceso al almacén, es la raíz con la que se firman las sesiones.
+- `LAB_KEY` — opcional. Si existe, ésa es la clave y se desactiva crearla o cambiarla desde el laboratorio.
+
+**Si olvidas la clave:** borra el archivo de `3d-may-effect/_auth/` en el almacén (Vercel → Storage → morphiqlab-blob → Manage Blobs) y vuelve a crearla con el código de configuración.
+
+Sin almacén el sitio funciona igual: sólo se desactivan los enlaces y el cambio de portada. La exportación a HTML no depende de él.
 
 ### Seguridad
 
 - Cabeceras en `vercel.json`: CSP, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`. `style-src` permite estilos en línea porque el visor inyecta su hoja de estilos (la misma que viaja dentro del HTML exportado).
 - Las funciones validan sesión y origen en todo lo que cambia estado; las subidas sólo aceptan JSON, hasta 60 MB, en rutas exactas.
+- El almacén es público (los enlaces compartidos lo necesitan); el registro de la clave lleva un sufijo aleatorio en su dirección y sólo contiene hash y sal.
 - El freno de intentos de clave vive en memoria de cada instancia: para un límite duro, añade una regla de rate limiting en el Firewall de Vercel sobre `/api/3d-may-effect/session`.
 
 ## Despliegue

@@ -15,6 +15,18 @@ const rewrites = vercel.rewrites || [];
 const headersFor = (p) => Object.fromEntries((vercel.headers || []).filter((h) => new RegExp('^' + h.source + '$').test(p)).flatMap((h) => h.headers.map((x) => [x.key.toLowerCase(), x.value]))); // mismas cabeceras que producción (incluida la CSP)
 const toRe = (src) => new RegExp('^' + src.replace(/:[a-z]+/gi, '[^/]+') + '$');
 
+// LAB_FAKE_STORE=1: la clave se guarda en memoria en vez de en Vercel Blob, para probar el alta y el acceso sin red.
+if (process.env.LAB_FAKE_STORE) {
+  process.env.BLOB_READ_WRITE_TOKEN ||= 'vercel_blob_rw_local_local';
+  const mem = new Map(); let n = 0;
+  (await import('../api/_lib/lab.js')).__setBackend({
+    list: async ({ prefix }) => ({ blobs: [...mem.values()].filter((b) => b.pathname.startsWith(prefix)) }),
+    put: async (pathname, body) => { const url = `memoria://${pathname}-${++n}`; mem.set(url, { url, pathname, body, uploadedAt: new Date() }); return { url }; },
+    del: async (urls) => { for (const u of [].concat(urls)) mem.delete(u); },
+    fetch: async (u) => ({ ok: mem.has(u), json: async () => JSON.parse(mem.get(u).body) }),
+  });
+}
+
 await buildAll();
 if (!process.argv.includes('--once')) {
   let timer;

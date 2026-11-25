@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   const pathname = `3d-may-effect/cards/${id}.json`;
   try {
     if (req.method === 'GET') { const b = await head(pathname); return json(res, 200, { url: b.url, size: b.size, uploadedAt: b.uploadedAt }); }
-    if (req.method === 'DELETE') { if (!guard(req, res)) return; await del(pathname); return json(res, 200, { ok: true }); }
+    if (req.method === 'DELETE') { if (!(await guard(req, res))) return; await del(pathname); return json(res, 200, { ok: true }); }
     return json(res, 405, { error: 'Método no permitido.' });
   } catch (err) {
     if (err && /not.?found|does not exist/i.test(String(err.name) + String(err.message))) return json(res, 404, { error: 'Esa carta no existe.' });

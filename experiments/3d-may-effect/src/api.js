@@ -29,8 +29,10 @@ export const fetchCard = (id) => fetchConfig('/card?id=' + encodeURIComponent(id
 export const cardExists = (id) => call('/card?id=' + encodeURIComponent(id)).then(() => true, (e) => { if (e.status === 404) return false; throw e; });
 
 // La sesión vive en una cookie HttpOnly: la clave se escribe una vez y no se guarda en el navegador.
-export const session = () => call('/session');
+export const session = (askCode = false) => call('/session' + (askCode ? '?setup=1' : '')); // askCode: deja el código de configuración en los registros de Vercel
 export const login = (key) => call('/session', { method: 'POST', body: { key } });
+export const setup = (code, key) => call('/session', { method: 'POST', body: { setup: { code, key } } });
+export const changeKey = (key) => call('/session', { method: 'POST', body: { change: { key } } });
 export const logout = () => call('/session', { method: 'DELETE' });
 export const listCards = () => call('/cards');
 export const deleteCard = (id) => call('/card?id=' + encodeURIComponent(id), { method: 'DELETE' });

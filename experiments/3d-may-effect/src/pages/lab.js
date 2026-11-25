@@ -254,13 +254,33 @@ function askKey() {
     return [i, msg, h('div', { class: 'row end' }, go)];
   });
 }
+/** Crea la primera clave (con el código de configuración) o la cambia (ya con sesión). */
+function askNewKey(first) {
+  return modal(first ? 'Crear la clave del laboratorio' : 'Cambiar la clave', (close) => {
+    const code = first ? h('input', { type: 'text', placeholder: 'Código de configuración', autocapitalize: 'none', autocomplete: 'off', spellcheck: false, 'aria-label': 'Código de configuración' }) : null;
+    const key = h('input', { type: 'password', autocomplete: 'new-password', placeholder: 'Clave nueva (mínimo 8 caracteres)', 'aria-label': 'Clave nueva' });
+    const msg = h('p', { class: 'hint', text: first ? 'El código de configuración sale en los registros de Vercel del proyecto (sólo se usa esta vez). La clave la eliges tú y se guarda cifrada.' : 'Al cambiarla se cierran las sesiones abiertas en otros dispositivos.' });
+    const go = h('button', { class: 'btn small primary', type: 'button', text: first ? 'Crear clave' : 'Cambiar clave' });
+    const run = async () => {
+      if (key.value.length < 8) { msg.textContent = 'La clave debe tener al menos 8 caracteres.'; msg.classList.add('err'); return; }
+      go.disabled = true;
+      try { const st = first ? await api.setup(code.value, key.value) : await api.changeKey(key.value); S.auth = true; S.storage = st.storage; close(true); toast(first ? 'Clave creada. Ya puedes publicar' : 'Clave cambiada'); }
+      catch (e) { msg.textContent = e.message || 'No se pudo guardar la clave.'; msg.classList.add('err'); go.disabled = false; }
+    };
+    go.addEventListener('click', run); key.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+    return [code, key, msg, h('div', { class: 'row end' }, h('button', { class: 'btn small ghost', type: 'button', text: 'Cancelar', onclick: () => close(null) }), go)];
+  });
+}
 async function needSession(storage = false) {
   if (!S.auth) {
     const st = await api.session().catch(() => null);
     if (!st) { toast('No se pudo contactar al servidor', 'err'); return false; }
-    if (!st.configured) { toast('Falta configurar la clave del laboratorio (LAB_KEY) en Vercel', 'err'); return false; }
     S.storage = st.storage; S.auth = st.ok;
-    if (!S.auth && !(await askKey())) return false;
+    if (!st.configured) {
+      if (!st.setup) { toast('Falta conectar el almacenamiento (Vercel Blob) al proyecto en Vercel', 'err'); return false; }
+      api.session(true).catch(() => {}); // deja el código de configuración en los registros
+      if (!(await askNewKey(true))) return false;
+    } else if (!S.auth && !(await askKey())) return false;
   }
   if (storage && S.storage === false) { toast('Falta conectar el almacenamiento (Vercel Blob) al proyecto en Vercel', 'err'); return false; }
   return true;
@@ -364,9 +384,14 @@ function paneOut(pane) {
   const auth = h('div', { class: 'row' }, h('span', { class: 'muted small', text: 'Comprobando…' }));
   api.session().then((st) => {
     S.auth = st.ok; S.storage = st.storage; auth.textContent = '';
-    auth.append(h('span', { class: 'muted small', text: !st.configured ? 'Falta configurar la clave (LAB_KEY) en Vercel.' : st.ok ? 'Sesión abierta en este dispositivo.' : 'Sin sesión: se pedirá la clave al publicar.' }));
-    if (st.configured) auth.append(h('button', { class: 'btn small ghost', type: 'button', text: st.ok ? 'Cerrar sesión' : 'Entrar', onclick: async () => { if (st.ok) { await api.logout().catch(() => {}); S.auth = false; toast('Sesión cerrada'); } else await askKey(); renderPane(); } }));
-    if (st.configured && !st.storage) auth.append(h('p', { class: 'hint', text: 'Falta conectar el almacenamiento (Vercel Blob): sin él no se pueden crear enlaces ni cambiar la portada. Exportar HTML funciona siempre.' }));
+    const say = (t) => auth.append(h('span', { class: 'muted small', text: t }));
+    const btn = (text, fn) => auth.append(h('button', { class: 'btn small ghost', type: 'button', text, onclick: async () => { await fn(); renderPane(); } }));
+    if (!st.storage) return say('Falta conectar el almacenamiento (Vercel Blob): sin él no hay enlaces ni portada propia. Exportar HTML funciona siempre.');
+    if (!st.configured) { say('Aún no has creado la clave del laboratorio.'); return btn('Crear clave', async () => { api.session(true).catch(() => {}); await askNewKey(true); }); }
+    if (!st.ok) { say('Sin sesión: se pedirá la clave al publicar.'); return btn('Entrar', askKey); }
+    say('Sesión abierta en este dispositivo.');
+    btn('Cerrar sesión', async () => { await api.logout().catch(() => {}); S.auth = false; toast('Sesión cerrada'); });
+    btn('Cambiar clave', () => askNewKey(false));
   }).catch(() => { auth.textContent = ''; auth.append(h('span', { class: 'muted small', text: 'Sin conexión con el servidor. Exportar HTML funciona igual.' })); });
   const tpl = h('div', { class: 'tpl' }, Object.entries(TEMPLATES).map(([k, t]) => h('button', { class: 'add', type: 'button', onclick: async () => { await save(); await openCard(t.make(), null); dirty(); S.tab = 'layers'; render(); toast('Carta nueva: ' + t.label); } }, h('span', { class: 'add-t', text: t.label }), h('span', { class: 'add-d', text: t.desc }))));
   pane.append(
